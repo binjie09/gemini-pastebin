@@ -21,7 +21,11 @@ export default function Home() {
     const [showCLI, setShowCLI] = useState(true);
     const [cliOS, setCliOS] = useState('linux'); // linux, mac, win
     const [localPath, setLocalPath] = useState('filename.txt');
+    const [showCLI, setShowCLI] = useState(true);
+    const [cliOS, setCliOS] = useState('linux'); // linux, mac, win
+    const [localPath, setLocalPath] = useState('filename.txt');
     const [showHelp, setShowHelp] = useState(false);
+    const [showFixConfirm, setShowFixConfirm] = useState(false);
     const { t } = useTranslation();
     const { showNotification } = useNotification();
     const navigate = useNavigate();
@@ -35,25 +39,30 @@ export default function Home() {
     };
 
     const handleFormatAndDetect = () => {
-        // 1. Try JSON Formatting
+        // 1. Try standard JSON Formatting first
         try {
             const parsed = JSON.parse(content);
             setContent(JSON.stringify(parsed, null, 2));
             setLanguage('json');
             return;
         } catch {
-            // Not JSON, continue to other repairs or detection
+            // Not standard JSON
         }
 
-        // 2. Try JSON Repair
+        // 2. Check if it LOOKS like JSON and is repairable
         try {
+            // Check if jsonrepair produces a valid result that is DIFFERENT from input (meaning it did something)
+            // But jsonrepair might be aggressive, so we rely on whether it throws or not + visual check by user.
+            // Actually, we just check if it IS repairable.
             const repaired = jsonrepair(content);
-            const parsed = JSON.parse(repaired);
-            setContent(JSON.stringify(parsed, null, 2));
-            setLanguage('json');
+            JSON.parse(repaired); // Verify it's valid JSON after repair
+
+            // If we are here, it is repairable invalid JSON.
+            // Prompt user.
+            setShowFixConfirm(true);
             return;
-        } catch (e) {
-            // Not repairable JSON
+        } catch {
+            // Not repairable JSON, move to detection
         }
 
         // 3. Auto-detect language
@@ -63,9 +72,21 @@ export default function Home() {
                 setLanguage(result.language);
                 showNotification(t('detected_language') + ': ' + result.language, 'info');
             } else if (result.language) {
-                // Map similar languages if needed, or just notify
                 showNotification(t('detected_language') + ': ' + result.language, 'info');
             }
+        }
+    };
+
+    const handleFixJSON = () => {
+        try {
+            const repaired = jsonrepair(content);
+            const parsed = JSON.parse(repaired);
+            setContent(JSON.stringify(parsed, null, 2));
+            setLanguage('json');
+            setShowFixConfirm(false);
+            showNotification(t('success'), 'success');
+        } catch (e) {
+            showNotification('Could not fix JSON automatically.', 'error');
         }
     };
 
@@ -126,6 +147,9 @@ export default function Home() {
                     </select>
                     <button className="btn btn-secondary" onClick={handleFormatAndDetect} title={t('format_detect')} style={{ fontSize: '0.8rem' }}>
                         {t('format')}
+                    </button>
+                    <button className="btn btn-secondary" onClick={handleFixJSON} title={t('fix_json')} style={{ fontSize: '0.8rem' }}>
+                        {t('fix_json')}
                     </button>
                     <button className="btn btn-secondary" onClick={() => setShowCLI(!showCLI)} title={t('cli_generator')} style={{ fontSize: '0.8rem' }}>
                         <Terminal size={14} /> CLI
@@ -220,5 +244,28 @@ export default function Home() {
                 </div>
             )}
         </div>
+    )
+}
+
+{/* Fix Confirm Modal using inline styles for simplicity */ }
+{
+    showFixConfirm && (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+            <div className="glass-panel" style={{ padding: '2rem', width: '400px', maxWidth: '90%', textAlign: 'center', background: '#0d1117' }}>
+                <h3 style={{ marginTop: 0 }}>{t('json_fix_title')}</h3>
+                <p>{t('json_fix_confirm')}</p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+                    <button className="btn btn-primary" onClick={handleFixJSON}>{t('yes')}</button>
+                    <button className="btn btn-secondary" onClick={() => setShowFixConfirm(false)}>{t('no')}</button>
+                </div>
+            </div>
+        </div>
+    )
+}
+        </div >
     );
 }

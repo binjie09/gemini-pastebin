@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3015:3015"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/cbj-tools-pastbin
+      - UPLOAD_DIR=uploads
+      - PORT=3015
+    volumes:
+      - ./server/uploads:/app/uploads
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

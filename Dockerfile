@@ -1,5 +1,5 @@
 # Build Frontend
-FROM node:22-alpine as client-build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS client-build
 WORKDIR /client
 COPY client/package*.json ./
 RUN npm install --legacy-peer-deps

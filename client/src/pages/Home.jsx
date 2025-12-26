@@ -21,9 +21,6 @@ export default function Home() {
     const [showCLI, setShowCLI] = useState(true);
     const [cliOS, setCliOS] = useState('linux'); // linux, mac, win
     const [localPath, setLocalPath] = useState('filename.txt');
-    const [showCLI, setShowCLI] = useState(true);
-    const [cliOS, setCliOS] = useState('linux'); // linux, mac, win
-    const [localPath, setLocalPath] = useState('filename.txt');
     const [showHelp, setShowHelp] = useState(false);
     const [showFixConfirm, setShowFixConfirm] = useState(false);
     const { t } = useTranslation();
@@ -100,7 +97,6 @@ export default function Home() {
                 language,
                 expiresAt
             });
-            navigate(`/${response.data._id}`);
             navigate(`/${response.data._id}`);
         } catch (error) {
             console.error('Failed to save paste', error);
@@ -243,29 +239,24 @@ export default function Home() {
                     </p>
                 </div>
             )}
-        </div>
-    )
-}
 
-{/* Fix Confirm Modal using inline styles for simplicity */ }
-{
-    showFixConfirm && (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-            <div className="glass-panel" style={{ padding: '2rem', width: '400px', maxWidth: '90%', textAlign: 'center', background: '#0d1117' }}>
-                <h3 style={{ marginTop: 0 }}>{t('json_fix_title')}</h3>
-                <p>{t('json_fix_confirm')}</p>
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
-                    <button className="btn btn-primary" onClick={handleFixJSON}>{t('yes')}</button>
-                    <button className="btn btn-secondary" onClick={() => setShowFixConfirm(false)}>{t('no')}</button>
+            {/* Fix Confirm Modal */}
+            {showFixConfirm && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <div className="glass-panel" style={{ padding: '2rem', width: '400px', maxWidth: '90%', textAlign: 'center', background: '#0d1117' }}>
+                        <h3 style={{ marginTop: 0 }}>{t('json_fix_title')}</h3>
+                        <p>{t('json_fix_confirm')}</p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+                            <button className="btn btn-primary" onClick={handleFixJSON}>{t('yes')}</button>
+                            <button className="btn btn-secondary" onClick={() => setShowFixConfirm(false)}>{t('no')}</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
-    )
-}
-        </div >
     );
 }

@@ -34,13 +34,13 @@ Access the application at `http://localhost:3015`
 ### Using Pre-built Image
 
 ```bash
-docker pull ghcr.io/binjie09/cbj-tools:latest
+docker pull ghcr.io/binjie09/gemini-pastebin:latest
 
 docker run -d \
   -p 3015:3015 \
   -e MONGO_URI=mongodb://your-mongo-host:27017/cbj-tools-pastbin \
   -v ./uploads:/app/uploads \
-  ghcr.io/binjie09/cbj-tools:latest
+  ghcr.io/binjie09/gemini-pastebin:latest
 ```
 
 ## Command Line Usage
@@ -81,7 +81,7 @@ curl.exe -F 'f=@C:\path\to\file.txt' https://your-domain.com
 version: '3.8'
 services:
   app:
-    build: .
+    image: ghcr.io/binjie09/gemini-pastebin:latest
     ports:
       - "3015:3015"
     environment:
@@ -89,7 +89,7 @@ services:
       - UPLOAD_DIR=uploads
       - PORT=3015
     volumes:
-      - ./server/uploads:/app/uploads
+      - ./uploads:/app/uploads
     depends_on:
       - mongo
   mongo:

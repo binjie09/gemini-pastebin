@@ -16,6 +16,8 @@ export default function PasteView() {
     const [error, setError] = useState(null);
     const [password, setPassword] = useState('');
     const [isProtected, setIsProtected] = useState(false);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
     const { t } = useTranslation();
     const { showNotification } = useNotification();
 
@@ -35,6 +37,26 @@ export default function PasteView() {
         };
         fetchPaste();
     }, [id, t]);
+
+    useEffect(() => {
+        if (paste) {
+            document.title = paste.title ? `${paste.title} - CBJ Pastebin` : 'CBJ Pastebin';
+        }
+    }, [paste]);
+
+    const handleUpdateTitle = async () => {
+        try {
+            await axios.put(`${API_URL}/${id}`, {
+                title: editTitle,
+                password // Send password if we have it (unlocked state)
+            });
+            setPaste(prev => ({ ...prev, title: editTitle }));
+            setIsEditingTitle(false);
+            showNotification(t('success'), 'success');
+        } catch (e) {
+            showNotification(t('error'), 'error');
+        }
+    };
 
     const copyToClipboard = () => {
         if (paste) {
@@ -98,8 +120,51 @@ export default function PasteView() {
         return <div className="glass-panel">Loading...</div>;
     }
 
+    if (!paste) {
+        return <div className="glass-panel">Loading...</div>;
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Title Section */}
+            <div className="glass-panel" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                {isEditingTitle ? (
+                    <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            style={{
+                                flex: 1,
+                                background: '#0d1117',
+                                border: '1px solid #30363d',
+                                color: 'white',
+                                padding: '0.5rem',
+                                borderRadius: '4px'
+                            }}
+                            placeholder={t('paste_title')}
+                        />
+                        <button className="btn btn-primary" onClick={handleUpdateTitle}>{t('update')}</button>
+                        <button className="btn btn-secondary" onClick={() => setIsEditingTitle(false)}>{t('cancel')}</button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {paste.title || <span style={{ color: '#8b949e', fontStyle: 'italic', fontSize: '1rem' }}>{t('paste_title')}</span>}
+                        </h2>
+                        {!isProtected && (
+                            <button
+                                onClick={() => { setEditTitle(paste.title || ''); setIsEditingTitle(true); }}
+                                style={{ background: 'none', border: 'none', color: '#8b949e', cursor: 'pointer', padding: '4px' }}
+                                title={t('edit_title')}
+                            >
+                                ✎
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Header / Meta */}
             <div className="glass-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.9rem', color: '#8b949e' }}>

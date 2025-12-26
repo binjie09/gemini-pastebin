@@ -14,6 +14,7 @@ const LANGUAGES = [
 ];
 
 export default function Home() {
+    const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [language, setLanguage] = useState('text');
     const [expiration, setExpiration] = useState('');
@@ -93,6 +94,7 @@ export default function Home() {
         try {
             const expiresAt = expiration ? new Date(Date.now() + parseInt(expiration)).toISOString() : null;
             const response = await axios.post(API_URL, {
+                title,
                 content,
                 language,
                 expiresAt
@@ -173,6 +175,22 @@ export default function Home() {
             )}
 
             {/* Editor Area */}
+            <input
+                type="text"
+                className="glass-panel"
+                style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem',
+                    background: '#0d1117',
+                    border: '1px solid #30363d',
+                    color: 'white',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                }}
+                placeholder={t('paste_title')}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+            />
             <textarea
                 className="glass-panel"
                 style={{

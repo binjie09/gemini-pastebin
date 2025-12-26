@@ -31,6 +31,7 @@ router.post('/', async (req, res) => {
         const paste = new Paste({
             content,
             language: language || 'text',
+            title: req.body.title || '',
             expiresAt: expiresAt ? new Date(expiresAt) : null
         });
 
@@ -134,6 +135,37 @@ router.post('/upload', upload.single('f'), async (req, res) => {
 
     } catch (error) {
         console.error('Upload Error:', error);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+
+// PUT /api/paste/:id - Update paste (Title only for now)
+router.put('/:id', async (req, res) => {
+    try {
+        const { title, password } = req.body;
+        const paste = await Paste.findById(req.params.id);
+
+        if (!paste) {
+            return res.status(404).json({ error: 'Paste not found' });
+        }
+
+        // Check password if protected
+        if (paste.isPrivate && paste.password) {
+            if (!password) {
+                return res.status(401).json({ error: 'Password required' });
+            }
+            const isMatch = await bcrypt.compare(password, paste.password);
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Invalid Password' });
+            }
+        }
+
+        paste.title = title || '';
+        await paste.save();
+
+        res.json(paste);
+    } catch (error) {
+        console.error('Update Paste Error:', error);
         res.status(500).json({ error: 'Server Error' });
     }
 });

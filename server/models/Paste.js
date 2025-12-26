@@ -14,6 +14,10 @@ const pasteSchema = new mongoose.Schema({
         type: String,
         default: 'text'
     },
+    title: {
+        type: String,
+        default: ''
+    },
     filename: { // Original filename if uploaded
         type: String
     },

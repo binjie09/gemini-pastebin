@@ -128,7 +128,9 @@ router.post('/upload', upload.single('f'), async (req, res) => {
 
         // CLI Output
         if (req.headers['user-agent'] && req.headers['user-agent'].includes('curl')) {
-            return res.send(`URL: ${req.protocol}://${req.get('host')}/${paste._id}\n`);
+            const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+            const host = req.headers['x-forwarded-host'] || req.get('host');
+            return res.send(`URL: ${protocol}://${host}/${paste._id}\n`);
         }
 
         res.status(201).json(paste);

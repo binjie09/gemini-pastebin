@@ -31,7 +31,7 @@ export default function Home() {
     const getCLICommand = () => {
         const url = `${window.location.origin}${API_URL}/upload`;
         if (cliOS === 'win') {
-            return `curl -F "f=@${localPath}" ${url}`;
+            return `curl.exe -F "f=@${localPath}" ${url}`;
         }
         return `curl -F 'f=@${localPath}' ${url}`;
     };

@@ -62,7 +62,7 @@ cat file.txt | curl -F 'f=@-' -F 'expiry=3600' https://your-domain.com
 curl -F 'f=@/path/to/file.txt' https://your-domain.com
 
 # Windows (PowerShell)
-curl.exe -F 'f=@C:\path\to\file.txt' https://your-domain.com
+curl.exe -F "f=@C:\path\to\file.txt" https://your-domain.com
 ```
 
 ## Configuration
@@ -174,6 +174,44 @@ GET /api/paste/:id
 
 ```
 GET /api/download/:id?password=xxx
+```
+
+## Advanced Usage
+
+### Capturing Terminal Session (Input & Output)
+
+If you want to record your entire terminal session and upload it to the pastebin:
+
+#### Linux / macOS
+Use the `script` command to record your session:
+
+```bash
+# Start recording to file 'session.log'
+script session.log
+
+# ... Run your commands ...
+
+# Stop recording (press Ctrl+D or type exit)
+exit
+
+# Upload the recording
+curl -F 'f=@session.log' https://your-domain.com/api/upload
+```
+
+#### Windows (PowerShell)
+Use `Start-Transcript` to record your session:
+
+```powershell
+# Start recording
+Start-Transcript -Path "session.txt"
+
+# ... Run your commands ...
+
+# Stop recording
+Stop-Transcript
+
+# Upload the recording
+curl -F "f=@session.txt" https://your-domain.com/api/upload
 ```
 
 ## Contributing

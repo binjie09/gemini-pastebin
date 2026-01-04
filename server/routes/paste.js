@@ -128,9 +128,16 @@ router.post('/upload', upload.single('f'), async (req, res) => {
 
         // CLI Output
         if (req.headers['user-agent'] && req.headers['user-agent'].includes('curl')) {
-            const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-            const host = req.headers['x-forwarded-host'] || req.get('host');
-            return res.send(`URL: ${protocol}://${host}/${paste._id}\n`);
+            // 优先使用 EXTERNAL_URL 环境变量，解决反代后协议和端口丢失问题
+            let baseUrl;
+            if (process.env.EXTERNAL_URL) {
+                baseUrl = process.env.EXTERNAL_URL.replace(/\/$/, ''); // 移除末尾斜杠
+            } else {
+                const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+                const host = req.headers['x-forwarded-host'] || req.get('host');
+                baseUrl = `${protocol}://${host}`;
+            }
+            return res.send(`URL: ${baseUrl}/${paste._id}\n`);
         }
 
         res.status(201).json(paste);

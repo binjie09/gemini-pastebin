@@ -27,6 +27,9 @@ const pasteSchema = new mongoose.Schema({
     mimetype: {
         type: String
     },
+    filesize: {
+        type: Number  // 文件大小（字节）
+    },
     expiresAt: {
         type: Date,
         default: null

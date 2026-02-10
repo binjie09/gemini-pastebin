@@ -182,7 +182,13 @@ export default function PasteView() {
                         {paste.language.toUpperCase()}
                     </span>
                     <span>•</span>
-                    <span>{(new Blob([paste.content]).size / 1024).toFixed(2)} KB</span>
+                    <span>{(() => {
+                        const bytes = paste.filesize || (paste.content ? new Blob([paste.content]).size : 0);
+                        if (bytes >= 1024 * 1024) {
+                            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+                        }
+                        return (bytes / 1024).toFixed(2) + ' KB';
+                    })()}</span>
                     <span>•</span>
                     <span>{new Date(paste.createdAt).toLocaleString()}</span>
                 </div>
@@ -191,12 +197,29 @@ export default function PasteView() {
                     <button className="btn btn-secondary" onClick={copyToClipboard} title={t('copy')}>
                         <Copy size={16} /> {t('copy')}
                     </button>
-                    <button className="btn btn-secondary" onClick={downloadRaw} title={t('download')}>
-                        <Download size={16} /> {t('download')}
-                    </button>
-                    <a href={`${API_URL}/raw/${id}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
-                        {t('raw')}
-                    </a>
+                    {/* 下载按钮：文件上传用后端接口，文本粘贴用前端 Blob */}
+                    {paste.filepath ? (
+                        <a href={`${API_URL}/raw/${id}`} className="btn btn-secondary" title={t('download')}>
+                            <Download size={16} /> {t('download')}
+                        </a>
+                    ) : (
+                        <button className="btn btn-secondary" onClick={downloadRaw} title={t('download')}>
+                            <Download size={16} /> {t('download')}
+                        </button>
+                    )}
+                    {/* 原文按钮：仅对小于 2MB 的文件显示，新窗口打开内联预览 */}
+                    {(() => {
+                        const size = paste.filesize || (paste.content ? new Blob([paste.content]).size : 0);
+                        const MAX_RAW_SIZE = 2 * 1024 * 1024; // 2MB
+                        if (size <= MAX_RAW_SIZE) {
+                            return (
+                                <a href={`${API_URL}/raw/${id}?inline=1`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                                    {t('raw')}
+                                </a>
+                            );
+                        }
+                        return null;
+                    })()}
                 </div>
             </div>
 

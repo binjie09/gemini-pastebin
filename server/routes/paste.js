@@ -119,6 +119,7 @@ router.post('/upload', upload.single('f'), async (req, res) => {
             filename: req.file.originalname,
             filepath: req.file.path,
             mimetype: req.file.mimetype,
+            filesize: req.file.size,  // 保存文件大小
             language: 'autodetect',
             expiresAt: null,
             isPrivate: false
@@ -180,6 +181,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // GET /api/raw/:id - Get raw content (useful for curl/wget)
+// 支持 ?inline=1 参数，在浏览器中内联显示而非下载
 router.get('/raw/:id', async (req, res) => {
     try {
         const paste = await Paste.findById(req.params.id);
@@ -187,13 +189,17 @@ router.get('/raw/:id', async (req, res) => {
             return res.status(404).send('Not Found');
         }
 
+        const isInline = req.query.inline === '1';
+
         if (paste.filepath) {
             const absolutePath = path.resolve(paste.filepath);
             // Set filename for download
             if (paste.filename) {
                 // Encode filename for content-disposition
                 const filenameEncoded = encodeURIComponent(paste.filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
-                res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filenameEncoded}`);
+                // inline 参数控制是内联显示还是下载
+                const disposition = isInline ? 'inline' : 'attachment';
+                res.setHeader('Content-Disposition', `${disposition}; filename*=UTF-8''${filenameEncoded}`);
             }
             res.sendFile(absolutePath);
         } else {

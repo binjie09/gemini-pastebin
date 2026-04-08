@@ -152,7 +152,7 @@ router.post('/upload', upload.single('f'), async (req, res) => {
 // PUT /api/paste/:id - Update paste (Title only for now)
 router.put('/:id', async (req, res) => {
     try {
-        const { title, password } = req.body;
+        const { title, language, password } = req.body;
         const paste = await Paste.findById(req.params.id);
 
         if (!paste) {
@@ -170,10 +170,11 @@ router.put('/:id', async (req, res) => {
             }
         }
 
-        paste.title = title || '';
+        if (title !== undefined) paste.title = title;
+        if (language !== undefined) paste.language = language;
         await paste.save();
 
-        res.json(paste);
+        res.json(getPasteWithContent(paste));
     } catch (error) {
         console.error('Update Paste Error:', error);
         res.status(500).json({ error: 'Server Error' });

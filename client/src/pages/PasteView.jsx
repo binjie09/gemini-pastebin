@@ -9,6 +9,11 @@ import { Copy, Download, FileText, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 import { API_URL } from '../config';
+import JsonViewer from '../components/JsonViewer';
+
+const LANGUAGES = [
+    'text', 'javascript', 'python', 'html', 'css', 'json', 'markdown', 'rust', 'go', 'java', 'cpp', 'autodetect'
+];
 
 export default function PasteView() {
     const { id } = useParams();
@@ -18,6 +23,7 @@ export default function PasteView() {
     const [isProtected, setIsProtected] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitle, setEditTitle] = useState('');
+    const [editLanguage, setEditLanguage] = useState('');
     const { t } = useTranslation();
     const { showNotification } = useNotification();
 
@@ -46,12 +52,22 @@ export default function PasteView() {
 
     const handleUpdateTitle = async () => {
         try {
-            await axios.put(`${API_URL}/${id}`, {
-                title: editTitle,
-                password // Send password if we have it (unlocked state)
-            });
-            setPaste(prev => ({ ...prev, title: editTitle }));
+            const payload = { title: editTitle };
+            if (editLanguage) payload.language = editLanguage;
+            await axios.put(`${API_URL}/${id}`, payload);
+            setPaste(prev => ({ ...prev, title: editTitle, ...(editLanguage ? { language: editLanguage } : {}) }));
             setIsEditingTitle(false);
+            showNotification(t('success'), 'success');
+        } catch (e) {
+            showNotification(t('error'), 'error');
+        }
+    };
+
+    const handleUpdateLanguage = async (newLang) => {
+        try {
+            await axios.put(`${API_URL}/${id}`, { language: newLang });
+            setPaste(prev => ({ ...prev, language: newLang }));
+            setEditLanguage('');
             showNotification(t('success'), 'success');
         } catch (e) {
             showNotification(t('error'), 'error');
@@ -120,10 +136,6 @@ export default function PasteView() {
         return <div className="glass-panel">Loading...</div>;
     }
 
-    if (!paste) {
-        return <div className="glass-panel">Loading...</div>;
-    }
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Title Section */}
@@ -179,7 +191,45 @@ export default function PasteView() {
                     )}
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {!paste.filename && <FileText size={16} />}
-                        {paste.language.toUpperCase()}
+                        {editLanguage !== '' ? (
+                            <select
+                                value={editLanguage}
+                                autoFocus
+                                onChange={(e) => setEditLanguage(e.target.value)}
+                                onBlur={() => {
+                                    if (editLanguage && editLanguage !== paste.language) {
+                                        handleUpdateLanguage(editLanguage);
+                                    } else {
+                                        setEditLanguage('');
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Escape') setEditLanguage('');
+                                    if (e.key === 'Enter' && editLanguage && editLanguage !== paste.language) {
+                                        handleUpdateLanguage(editLanguage);
+                                    }
+                                }}
+                                style={{
+                                    background: '#0d1117',
+                                    color: 'inherit',
+                                    border: '1px solid var(--primary-color)',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang.toUpperCase()}</option>)}
+                            </select>
+                        ) : (
+                            <span
+                                onClick={() => setEditLanguage(paste.language)}
+                                style={{ cursor: 'pointer', borderBottom: '1px dashed #8b949e' }}
+                                title={t('edit_language') || 'Click to change language'}
+                            >
+                                {paste.language.toUpperCase()}
+                            </span>
+                        )}
                     </span>
                     <span>•</span>
                     <span>{(() => {
@@ -266,6 +316,16 @@ export default function PasteView() {
                                 <Ansi>{paste.content}</Ansi>
                             </div>
                         );
+                    }
+
+                    // JSON collapsible tree view
+                    if (paste.language === 'json') {
+                        try {
+                            const parsed = JSON.parse(paste.content);
+                            return <JsonViewer data={parsed} />;
+                        } catch {
+                            // Fall through to syntax highlighter if invalid JSON
+                        }
                     }
 
                     // Default Code View

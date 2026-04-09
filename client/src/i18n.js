@@ -41,7 +41,11 @@ const resources = {
             "not_found": "Paste not found or expired.",
             "usage_guide": "Usage Guide",
             "help_text": "CBJ Tools is a simple Pastbin project. You can paste code here, format JSON, or use the CLI generator to upload files from your local machine. Files uploaded via CLI are automatically password protected for security.",
-            "cli_upload_desc": "Upload files via curl:"
+            "cli_upload_desc": "Upload files via curl:",
+            "upload_file": "Upload File",
+            "uploading": "Uploading...",
+            "upload_success": "File uploaded successfully",
+            "drag_drop_hint": "Drag & drop a file here to upload"
         }
     },
     zh: {
@@ -82,7 +86,11 @@ const resources = {
             "not_found": "代码未找到或已过期。",
             "usage_guide": "使用指南",
             "help_text": "CBJ 工具箱是一个简单的代码剪贴板项目。你可以直接在此粘贴代码、格式化 JSON，或者使用命令行生成器从本地上传文件。通过命令行上传的文件会自动加密以保护安全。",
-            "cli_upload_desc": "通过 curl 上传文件:"
+            "cli_upload_desc": "通过 curl 上传文件:",
+            "upload_file": "上传文件",
+            "uploading": "上传中...",
+            "upload_success": "文件上传成功",
+            "drag_drop_hint": "拖拽文件到此处上传"
         }
     }
 };

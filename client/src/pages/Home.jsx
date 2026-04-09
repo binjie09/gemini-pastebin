@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Save, FileText, Settings, HelpCircle, Terminal } from 'lucide-react';
+import { Save, FileText, Settings, HelpCircle, Terminal, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 import { API_URL } from '../config';
@@ -19,11 +19,13 @@ export default function Home() {
     const [language, setLanguage] = useState('text');
     const [expiration, setExpiration] = useState('');
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [showCLI, setShowCLI] = useState(true);
     const [cliOS, setCliOS] = useState('linux'); // linux, mac, win
     const [localPath, setLocalPath] = useState('filename.txt');
     const [showHelp, setShowHelp] = useState(false);
     const [showFixConfirm, setShowFixConfirm] = useState(false);
+    const fileInputRef = useRef(null);
     const { t } = useTranslation();
     const { showNotification } = useNotification();
     const navigate = useNavigate();
@@ -108,6 +110,35 @@ export default function Home() {
         }
     };
 
+    const handleFileUpload = async (file) => {
+        if (!file) return;
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('f', file);
+            const response = await axios.post(`${API_URL}/upload`, formData);
+            showNotification(t('upload_success'), 'success');
+            navigate(`/${response.data._id}`);
+        } catch (error) {
+            console.error('Upload Error:', error);
+            showNotification(t('error') + ': ' + (error.response?.data?.error || 'Upload failed'), 'error');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileUpload(file);
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: 'calc(100vh - 100px)' }}>
             {/* Toolbar */}
@@ -161,6 +192,16 @@ export default function Home() {
                     <Save size={16} />
                     {loading ? t('saving') : t('save_paste')}
                 </button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleFileUpload(e.target.files[0])}
+                />
+                <button className="btn btn-secondary" onClick={() => fileInputRef.current.click()} disabled={uploading}>
+                    <Upload size={16} />
+                    {uploading ? t('uploading') : t('upload_file')}
+                </button>
             </div>
 
             {showHelp && (
@@ -207,9 +248,11 @@ export default function Home() {
                     padding: '1rem',
                     boxSizing: 'border-box'
                 }}
-                placeholder={t('type_here')}
+                placeholder={`${t('type_here')}\n\n${t('drag_drop_hint')}`}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
                 spellCheck="false"
             />
             {showCLI && (

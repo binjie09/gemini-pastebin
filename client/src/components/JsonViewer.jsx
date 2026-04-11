@@ -67,6 +67,7 @@ function JsonObject({ obj, indent, isLast }) {
                 <ToggleIcon collapsed={collapsed} />
                 <span style={{ color: THEME.bracket }}>{'{'}</span>
             </span>
+            <span key={collapsed ? 'c' : 'e'}>
             {collapsed ? (
                 <span>
                     <CollapsedPreview value={obj} />
@@ -89,6 +90,7 @@ function JsonObject({ obj, indent, isLast }) {
                     {!isLast && <span style={{ color: THEME.comma }}>,</span>}
                 </span>
             )}
+            </span>
         </span>
     );
 }
@@ -113,6 +115,7 @@ function JsonArray({ arr, indent, isLast }) {
                 <ToggleIcon collapsed={collapsed} />
                 <span style={{ color: THEME.bracket }}>{'['}</span>
             </span>
+            <span key={collapsed ? 'c' : 'e'}>
             {collapsed ? (
                 <span>
                     <CollapsedPreview value={arr} />
@@ -133,6 +136,7 @@ function JsonArray({ arr, indent, isLast }) {
                     {!isLast && <span style={{ color: THEME.comma }}>,</span>}
                 </span>
             )}
+            </span>
         </span>
     );
 }

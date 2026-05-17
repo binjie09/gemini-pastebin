@@ -14,13 +14,13 @@ const THEME = {
     bg: '#1e1e1e',
 };
 
-function JsonValue({ value, indent, isLast, rootKey }) {
+function JsonValue({ value, indent, isLast, expandDepth }) {
     if (value === null) return <span style={{ color: THEME.null }}>null{!isLast && <span style={{ color: THEME.comma }}>,</span>}</span>;
     if (typeof value === 'boolean') return <span style={{ color: THEME.boolean }}>{String(value)}{!isLast && <span style={{ color: THEME.comma }}>,</span>}</span>;
     if (typeof value === 'number') return <span style={{ color: THEME.number }}>{String(value)}{!isLast && <span style={{ color: THEME.comma }}>,</span>}</span>;
     if (typeof value === 'string') return <span style={{ color: THEME.string }}>&quot;{value}&quot;{!isLast && <span style={{ color: THEME.comma }}>,</span>}</span>;
-    if (Array.isArray(value)) return <JsonArray arr={value} indent={indent} isLast={isLast} />;
-    if (typeof value === 'object') return <JsonObject obj={value} indent={indent} isLast={isLast} />;
+    if (Array.isArray(value)) return <JsonArray arr={value} indent={indent} isLast={isLast} expandDepth={expandDepth} />;
+    if (typeof value === 'object') return <JsonObject obj={value} indent={indent} isLast={isLast} expandDepth={expandDepth} />;
     return String(value);
 }
 
@@ -46,8 +46,8 @@ function ToggleIcon({ collapsed }) {
         : <ChevronDown size={14} style={{ flexShrink: 0, opacity: 0.7 }} />;
 }
 
-function JsonObject({ obj, indent, isLast }) {
-    const [collapsed, setCollapsed] = useState(indent >= 2);
+function JsonObject({ obj, indent, isLast, expandDepth }) {
+    const [collapsed, setCollapsed] = useState(indent >= expandDepth);
     const keys = Object.keys(obj);
     const isEmpty = keys.length === 0;
 
@@ -67,7 +67,6 @@ function JsonObject({ obj, indent, isLast }) {
                 <ToggleIcon collapsed={collapsed} />
                 <span style={{ color: THEME.bracket }}>{'{'}</span>
             </span>
-            <span key={collapsed ? 'c' : 'e'}>
             {collapsed ? (
                 <span>
                     <CollapsedPreview value={obj} />
@@ -82,7 +81,7 @@ function JsonObject({ obj, indent, isLast }) {
                         <span key={key}>
                             {pad}<span style={{ color: THEME.key }}>&quot;{key}&quot;</span>
                             <span style={{ color: THEME.colon }}>: </span>
-                            <JsonValue value={obj[key]} indent={nextIndent} isLast={i === keys.length - 1} rootKey={key} />
+                            <JsonValue value={obj[key]} indent={nextIndent} isLast={i === keys.length - 1} expandDepth={expandDepth} />
                             {'\n'}
                         </span>
                     ))}
@@ -90,13 +89,12 @@ function JsonObject({ obj, indent, isLast }) {
                     {!isLast && <span style={{ color: THEME.comma }}>,</span>}
                 </span>
             )}
-            </span>
         </span>
     );
 }
 
-function JsonArray({ arr, indent, isLast }) {
-    const [collapsed, setCollapsed] = useState(indent >= 2);
+function JsonArray({ arr, indent, isLast, expandDepth }) {
+    const [collapsed, setCollapsed] = useState(indent >= expandDepth);
     const isEmpty = arr.length === 0;
 
     if (isEmpty) {
@@ -115,7 +113,6 @@ function JsonArray({ arr, indent, isLast }) {
                 <ToggleIcon collapsed={collapsed} />
                 <span style={{ color: THEME.bracket }}>{'['}</span>
             </span>
-            <span key={collapsed ? 'c' : 'e'}>
             {collapsed ? (
                 <span>
                     <CollapsedPreview value={arr} />
@@ -128,7 +125,7 @@ function JsonArray({ arr, indent, isLast }) {
                     {'\n'}
                     {arr.map((item, i) => (
                         <span key={i}>
-                            {pad}<JsonValue value={item} indent={nextIndent} isLast={i === arr.length - 1} />
+                            {pad}<JsonValue value={item} indent={nextIndent} isLast={i === arr.length - 1} expandDepth={expandDepth} />
                             {'\n'}
                         </span>
                     ))}
@@ -136,7 +133,6 @@ function JsonArray({ arr, indent, isLast }) {
                     {!isLast && <span style={{ color: THEME.comma }}>,</span>}
                 </span>
             )}
-            </span>
         </span>
     );
 }
@@ -149,8 +145,21 @@ function countNodes(value) {
     return count;
 }
 
+const btnStyle = {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 4,
+    color: '#ccc',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    fontSize: 12,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+};
+
 export default function JsonViewer({ data }) {
-    const [allCollapsed, setAllCollapsed] = useState(false);
+    const [expandDepth, setExpandDepth] = useState(2);
     const [copyLabel, setCopyLabel] = useState(false);
 
     const handleCopy = useCallback(() => {
@@ -158,6 +167,9 @@ export default function JsonViewer({ data }) {
         setCopyLabel(true);
         setTimeout(() => setCopyLabel(false), 1500);
     }, [data]);
+
+    const handleExpand = useCallback(() => setExpandDepth(d => d + 1), []);
+    const handleCollapse = useCallback(() => setExpandDepth(d => Math.max(1, d - 1)), []);
 
     const nodeCount = countNodes(data);
     const hasDeepNodes = nodeCount > 0;
@@ -169,48 +181,24 @@ export default function JsonViewer({ data }) {
                 display: 'flex', gap: 6, zIndex: 10,
             }}>
                 {hasDeepNodes && (
-                    <button
-                        onClick={() => setAllCollapsed(c => !c)}
-                        style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: 4,
-                            color: '#ccc',
-                            cursor: 'pointer',
-                            padding: '4px 8px',
-                            fontSize: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                        }}
-                        title={allCollapsed ? 'Expand all' : 'Collapse all'}
-                    >
-                        {allCollapsed ? <UnfoldVertical size={14} /> : <FoldVertical size={14} />}
-                        {allCollapsed ? 'Expand' : 'Collapse'}
-                    </button>
+                    <>
+                        <button onClick={handleExpand} style={btnStyle} title="展开一层">
+                            <UnfoldVertical size={14} />
+                            展开
+                        </button>
+                        <button onClick={handleCollapse} style={btnStyle} title="收起一层">
+                            <FoldVertical size={14} />
+                            收起
+                        </button>
+                    </>
                 )}
-                <button
-                    onClick={handleCopy}
-                    style={{
-                        background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 4,
-                        color: '#ccc',
-                        cursor: 'pointer',
-                        padding: '4px 8px',
-                        fontSize: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                    }}
-                    title="Copy JSON"
-                >
+                <button onClick={handleCopy} style={btnStyle} title="Copy JSON">
                     <Copy size={14} />
                     {copyLabel ? 'Copied!' : 'Copy'}
                 </button>
             </div>
             <pre
-                key={allCollapsed ? 'collapsed' : 'expanded'}
+                key={expandDepth}
                 style={{
                     margin: 0,
                     padding: '1.5rem',
@@ -224,7 +212,7 @@ export default function JsonViewer({ data }) {
                     color: '#d4d4d4',
                 }}
             >
-                <JsonValue value={data} indent={0} isLast={true} />
+                <JsonValue value={data} indent={0} isLast={true} expandDepth={expandDepth} />
             </pre>
         </div>
     );

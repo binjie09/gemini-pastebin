@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationContext = createContext();
 
@@ -13,23 +14,27 @@ export const useNotification = () => {
 
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
+    const navigate = useNavigate();
 
     const removeNotification = useCallback((id) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
     }, []);
 
-    const showNotification = useCallback((message, type = 'info', duration = 3000) => {
+    const showNotification = useCallback((message, type = 'info', link = null) => {
         const id = Date.now();
-        setNotifications(prev => [...prev, { id, message, type }]);
+        setNotifications(prev => [...prev, { id, message, type, link }]);
 
-        if (duration > 0) {
-            setTimeout(() => {
-                removeNotification(id);
-            }, duration);
-        }
+        setTimeout(() => {
+            removeNotification(id);
+        }, link ? 8000 : 3000);
     }, [removeNotification]);
 
-
+    const handleClick = (n) => {
+        if (n.link) {
+            navigate(`/${n.link}`);
+            removeNotification(n.id);
+        }
+    };
 
     return (
         <NotificationContext.Provider value={{ showNotification }}>
@@ -49,6 +54,7 @@ export const NotificationProvider = ({ children }) => {
                     <div
                         key={n.id}
                         className={`glass-panel notification-${n.type}`}
+                        onClick={() => handleClick(n)}
                         style={{
                             padding: '1rem',
                             borderRadius: '8px',
@@ -63,7 +69,8 @@ export const NotificationProvider = ({ children }) => {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             animation: 'slideIn 0.3s ease-out',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            cursor: n.link ? 'pointer' : 'default'
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -73,7 +80,7 @@ export const NotificationProvider = ({ children }) => {
                             <span style={{ fontSize: '0.9rem', color: '#e6edf3' }}>{n.message}</span>
                         </div>
                         <button
-                            onClick={() => removeNotification(n.id)}
+                            onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
                             style={{
                                 background: 'transparent',
                                 border: 'none',

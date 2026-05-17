@@ -45,7 +45,14 @@ const resources = {
             "upload_file": "Upload File",
             "uploading": "Uploading...",
             "upload_success": "File uploaded successfully",
-            "drag_drop_hint": "Drag & drop a file here to upload"
+            "drag_drop_hint": "Drag & drop a file here to upload",
+            "lan_devices": "LAN Devices",
+            "online": "online",
+            "lan_no_devices": "No other devices on this network.",
+            "shared_to_devices": "Shared to {{count}} device(s)",
+            "my_pastes": "My Pastes",
+            "received_shares": "Received",
+            "no_history": "No history yet."
         }
     },
     zh: {
@@ -90,7 +97,14 @@ const resources = {
             "upload_file": "上传文件",
             "uploading": "上传中...",
             "upload_success": "文件上传成功",
-            "drag_drop_hint": "拖拽文件到此处上传"
+            "drag_drop_hint": "拖拽文件到此处上传",
+            "lan_devices": "局域网设备",
+            "online": "在线",
+            "lan_no_devices": "当前网络没有其他设备在线。",
+            "shared_to_devices": "已共享给 {{count}} 台设备",
+            "my_pastes": "我的发布",
+            "received_shares": "收到的共享",
+            "no_history": "暂无历史记录。"
         }
     }
 };

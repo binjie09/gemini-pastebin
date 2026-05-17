@@ -1,11 +1,15 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3001;
 
 // Trust Proxy for X-Forwarded-Proto/Host
@@ -50,7 +54,79 @@ app.get('/*splat', (req, res) => {
     }
 });
 
+// --- Socket.IO: LAN device discovery ---
+const devices = new Map(); // deviceId -> { deviceId, socketId, name, subnet, joinedAt }
 
-app.listen(PORT, () => {
+function getSubnet(ip) {
+    const v4 = ip.replace(/^.*:/, '');
+    const parts = v4.split('.');
+    if (parts.length === 4) return parts.slice(0, 3).join('.');
+    return 'default';
+}
+
+function broadcastDevices(subnet) {
+    const list = [];
+    for (const [, dev] of devices) {
+        if (dev.subnet === subnet) {
+            list.push({ id: dev.deviceId, name: dev.name, joinedAt: dev.joinedAt });
+        }
+    }
+    io.to(subnet).emit('devices-update', list);
+}
+
+io.on('connection', (socket) => {
+    const ip = socket.handshake.headers['x-forwarded-for']
+        || socket.handshake.address;
+    const subnet = getSubnet(ip);
+    const { deviceId, deviceName } = socket.handshake.auth || {};
+
+    if (!deviceId) {
+        socket.disconnect();
+        return;
+    }
+
+    socket.join(subnet);
+
+    const device = {
+        deviceId,
+        socketId: socket.id,
+        name: (deviceName || '').slice(0, 30),
+        subnet,
+        joinedAt: new Date().toISOString()
+    };
+    devices.set(deviceId, device);
+
+    socket.on('set-name', (name) => {
+        if (typeof name === 'string' && name.trim()) {
+            device.name = name.trim().slice(0, 30);
+            broadcastDevices(subnet);
+        }
+    });
+
+    socket.on('share-paste', ({ pasteId, title, targetIds }) => {
+        if (!pasteId || !Array.isArray(targetIds)) return;
+        for (const targetDeviceId of targetIds) {
+            const target = devices.get(targetDeviceId);
+            if (target) {
+                io.to(target.socketId).emit('paste-shared', {
+                    pasteId,
+                    title: title || pasteId,
+                    from: device.name || device.deviceId
+                });
+            }
+        }
+    });
+
+    socket.on('disconnect', () => {
+        if (devices.get(deviceId)?.socketId === socket.id) {
+            devices.delete(deviceId);
+        }
+        broadcastDevices(subnet);
+    });
+
+    broadcastDevices(subnet);
+});
+
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
